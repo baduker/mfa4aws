@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "mfa4aws"
+version = "0.1.0beta"
+description = "A CLI tool for AWS MFA authentication"
+authors = ["baduker <baduker@protonmail.ch>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/baduker/mfa4aws"
+repository = "https://github.com/baduker/mfa4aws"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+click = "^8.1.7"
+boto3 = "^1.35.71"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+black = "^24.10.0"
+flake8 = "^7.1.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+mfa4aws = "mfa4aws.cli:cli"
+
+[tool.poetry.urls]
+Homepage = "https://github.com/baduker/mfa4aws"
+Issues = "https://github.com/baduker/mfa4aws/issues"
