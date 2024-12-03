@@ -1,5 +1,6 @@
-from getpass import getpass
 from configparser import ConfigParser
+from getpass import getpass
+
 from mfa4aws.util import log_error_and_exit, prompter
 
 

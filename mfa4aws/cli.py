@@ -1,11 +1,12 @@
-import click
 import logging
 import sys
 from datetime import datetime
 
+import click
+
 from mfa4aws import __version__
 from mfa4aws.config import initial_setup
-from mfa4aws.core import validate, get_config, AWS_CREDS_PATH
+from mfa4aws.core import validate, get_config, AWS_CREDS_PATH, get_profiles
 
 logger = logging.getLogger("mfa4aws")
 
@@ -55,6 +56,7 @@ def cli(ctx, version, log_level):
 @click.option("--role-session-name", default=None, help="Session name when assuming a role.")
 @click.option("--short-term-suffix", default=None, help="Short-term credential profile suffix.")
 @click.option("--token", type=int, help="MFA token provided directly.")
+@click.pass_context
 def auth(
     assume_role,
     device,
@@ -98,6 +100,23 @@ def auth(
         token,
     )
 
+@click.command()
+def list_profiles():
+    config = get_config(AWS_CREDS_PATH)
+    profiles = config.sections()
+
+    if not profiles:
+        click.echo("No profiles found in the credentials file.")
+        return
+
+    click.echo(f"Available AWS profiles in {AWS_CREDS_PATH}:")
+    for index, profile in enumerate(profiles, start=1):
+        click.echo(f"{index}. {profile}")
+
+    for profile in get_profiles():
+        click.echo(profile)
+
+cli.add_command(list_profiles)
 
 if __name__ == "__main__":
     cli()

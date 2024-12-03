@@ -1,9 +1,9 @@
-import boto3
 import datetime
-from botocore.config import Config
-from botocore.exceptions import ClientError, ParamValidationError
 from configparser import ConfigParser, NoOptionError, NoSectionError
 from pathlib import Path
+
+import boto3
+from botocore.exceptions import ClientError, ParamValidationError
 
 from mfa4aws.util import log_error_and_exit, prompter
 
@@ -21,6 +21,10 @@ def get_config(aws_creds_path: Path) -> ConfigParser:
     except (NoOptionError, NoSectionError) as error:
         log_error_and_exit(None, f"Error parsing credentials file: {str(error)}")
     return config
+
+
+def get_profiles() -> list:
+    return boto3.session.Session().available_profiles
 
 
 def validate(
@@ -77,9 +81,12 @@ def validate(
         role_session_name,
         token,
         config,
+        region,
         logger,
     )
 
+
+# core.py
 
 def get_credentials(
     short_term_name: str,
@@ -91,6 +98,7 @@ def get_credentials(
     role_session_name: str,
     token: str,
     config: ConfigParser,
+    region: str,
     logger,
 ):
     """Retrieve temporary credentials from AWS STS."""
@@ -101,6 +109,7 @@ def get_credentials(
         "sts",
         aws_access_key_id=key_id,
         aws_secret_access_key=access_key,
+        region_name=region,  # Use the region parameter here
     )
 
     response = None
