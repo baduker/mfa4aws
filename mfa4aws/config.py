@@ -1,10 +1,13 @@
+import logging
+import sys
 from configparser import ConfigParser
 from getpass import getpass
 
-from mfa4aws.util import log_error_and_exit, prompter
+from mfa4aws.util import prompter
 
+logger = logging.getLogger(__name__)
 
-def initial_setup(logger, config_path):
+def initial_setup(config_path):
     """Initial setup for AWS credentials."""
     console_input = prompter()
     profile_name = console_input("Profile name (default: 'default'): ") or "default"
@@ -12,11 +15,13 @@ def initial_setup(logger, config_path):
 
     aws_access_key_id = getpass("aws_access_key_id: ")
     if not aws_access_key_id:
-        log_error_and_exit(logger, "You must supply aws_access_key_id.")
+        logger.exception("You must supply aws_access_key_id.")
+        sys.exit(1)
 
     aws_secret_access_key = getpass("aws_secret_access_key: ")
     if not aws_secret_access_key:
-        log_error_and_exit(logger, "You must supply aws_secret_access_key.")
+        logger.exception("You must supply aws_secret_access_key.")
+        sys.exit(1)
 
     new_config = ConfigParser()
     new_config.add_section(profile_name)

@@ -1,11 +1,15 @@
 import datetime
+import logging
+import sys
 from configparser import ConfigParser, NoOptionError, NoSectionError
 from pathlib import Path
 
 import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 
-from mfa4aws.util import log_error_and_exit, prompter, validate_token, format_duration, calculate_time_left
+from mfa4aws.util import prompter, validate_token, format_duration, calculate_time_left
+
+logger = logging.getLogger(__name__)
 
 AWS_CREDS_PATH = Path.home() / ".aws" / "credentials"
 
@@ -14,12 +18,15 @@ def get_config(aws_creds_path: Path) -> ConfigParser:
     """Load AWS credentials configuration."""
     config = ConfigParser()
     try:
+        logger.debug(f"Reading credentials file at {aws_creds_path}.")
         config.read(aws_creds_path)
-    # Let's catch more specific exceptions
     except FileNotFoundError as error:
-        log_error_and_exit(None, f"Error reading credentials file: {str(error)}")
+        logger.exception(f"Error reading credentials file: {str(error)}")
+        sys.exit(1)
     except (NoOptionError, NoSectionError) as error:
-        log_error_and_exit(None, f"Error parsing credentials file: {str(error)}")
+        logger.exception(f"Error reading credentials file: {str(error)}")
+        sys.exit(1)
+    logger.debug(f"Credentials file loaded successfully.")
     return config
 
 
@@ -33,7 +40,6 @@ def validate(
     device: str,
     duration: int,
     force: bool,
-    logger: object,
     long_term_suffix: str,
     profile: str,
     region: str,
@@ -46,28 +52,32 @@ def validate(
     short_term_name = f"{profile}-{short_term_suffix}" if short_term_suffix else profile
 
     if not config.has_section(long_term_name):
-        log_error_and_exit(logger, f"Long-term credentials section [{long_term_name}] is missing.")
+        logger.error(f"Long-term credentials section [{long_term_name}] is missing.")
 
     key_id = config.get(long_term_name, "aws_access_key_id")
+    logger.debug(f"Using key ID: {key_id}")
     access_key = config.get(long_term_name, "aws_secret_access_key")
+    logger.debug(f"Using access key: {access_key}")
 
     if not device:
         device = config.get(long_term_name, "aws_mfa_device", fallback=None)
         if not device:
-            log_error_and_exit(logger, "MFA device not provided.")
+            logger.error("MFA device not provided.")
 
     if assume_role:
+        logger.debug(f"Assuming role: {assume_role}")
         role_arn = assume_role
     else:
         role_arn = config.get(long_term_name, "assume_role", fallback=None)
 
     # Check for existing valid short-term credentials
+    logger.debug(f"Checking for existing short-term credentials in [{short_term_name}].")
     if config.has_section(short_term_name):
         exp_str = config.get(short_term_name, "expiration", fallback=None)
         if exp_str:
             expiration = datetime.datetime.strptime(exp_str, "%Y-%m-%d %H:%M:%S")
-            if expiration > datetime.datetime.utcnow() and not force:
-                logger.info(f"Credentials are still valid for {calculate_time_left(expiration)} until {expiration}.")
+            if expiration > datetime.datetime.now() and not force:
+                logger.info(f"Your temporary credentials are still valid for {calculate_time_left(expiration)} until {expiration}.")
                 return
 
     # Generate new credentials
@@ -82,7 +92,6 @@ def validate(
         token,
         config,
         region,
-        logger,
     )
 
 
@@ -99,7 +108,6 @@ def get_credentials(
     token: str,
     config: ConfigParser,
     region: str,
-    logger,
 ):
     """Retrieve temporary credentials from AWS STS."""
     if not token:
@@ -113,11 +121,14 @@ def get_credentials(
         aws_secret_access_key=access_key,
         region_name=region,  # Use the region parameter here
     )
+    logger.debug(f"STS client created with region: {region}")
+    logger.debug(f"Client details: {client}")
 
     logger.info(f"Fetching temporary credentials for - Profile:  {short_term_name}, Duration: {duration} seconds {format_duration(duration)}")
     response = None
     try:
         if assume_role:
+            logger.debug(f"Assuming role: {assume_role}")
             response = client.assume_role(
                 RoleArn=assume_role,
                 RoleSessionName=role_session_name or "mfa-session",
@@ -126,13 +137,14 @@ def get_credentials(
                 TokenCode=token,
             )
         else:
+            logger.debug(f"Getting session token for device: {device}, duration: {duration}, token: {token}")
             response = client.get_session_token(
                 DurationSeconds=duration,
                 SerialNumber=device,
                 TokenCode=token,
             )
     except (ClientError, ParamValidationError) as error:
-        log_error_and_exit(logger, f"Error retrieving credentials: {str(error)}")
+        logger.exception(f"Error retrieving credentials: {str(error)}")
 
     credentials = response["Credentials"]
     config[short_term_name] = {

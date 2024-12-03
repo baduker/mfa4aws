@@ -1,15 +1,8 @@
-import sys
 import datetime
+import logging
+import sys
 
-
-def log_error_and_exit(logger, message) -> None:
-    """Log an error and exit."""
-    if logger:
-        logger.error(message)
-    else:
-        print(message, file=sys.stderr)
-    sys.exit(1)
-
+logger = logging.getLogger(__name__)
 
 def prompter():
     """Return an input function."""
@@ -38,5 +31,7 @@ def calculate_time_left(expiration: datetime) -> str:
 def validate_token(token: str) -> None:
     """Validate the MFA token."""
     # Token must be 6 digits and can't be empty
+    logger.debug(f"Validating MFA token: {token}")
     if token.isdigit() or len(token) != 6:
-        log_error_and_exit(None, "Invalid MFA token. Must be 6 digits.")
+        logger.error("Invalid MFA token. Must be 6 digits.")
+        sys.exit(1)
