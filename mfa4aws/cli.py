@@ -53,8 +53,6 @@ def auth(
     token,
 ):
     """Authenticate with AWS MFA and retrieve temporary credentials."""
-    logger.info("Starting AWS MFA authentication...")
-
     # Ensure credentials file exists
     if not AWS_CREDS_PATH.exists():
         logger.error(f"Credentials file not found at {AWS_CREDS_PATH}.")

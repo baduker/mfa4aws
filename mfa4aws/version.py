@@ -14,7 +14,7 @@ Manage your AWS MFA credentials with ease.
 ██ ████ ██ █████   ███████ ███████ ███████ ██  █  ██ ███████
 ██  ██  ██ ██      ██   ██      ██ ██   ██ ██ ███ ██      ██
 ██      ██ ██      ██   ██      ██ ██   ██  ███ ███  ███████
-                                     v{__version__} ({RELEASE_DATE})
+v{__version__} ({RELEASE_DATE}) by baduker
 """
 
 def show_version():

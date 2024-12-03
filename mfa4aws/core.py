@@ -5,7 +5,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 
-from mfa4aws.util import log_error_and_exit, prompter
+from mfa4aws.util import log_error_and_exit, prompter, validate_token, format_duration, calculate_time_left
 
 AWS_CREDS_PATH = Path.home() / ".aws" / "credentials"
 
@@ -67,7 +67,7 @@ def validate(
         if exp_str:
             expiration = datetime.datetime.strptime(exp_str, "%Y-%m-%d %H:%M:%S")
             if expiration > datetime.datetime.utcnow() and not force:
-                logger.info(f"Credentials are still valid until {expiration}.")
+                logger.info(f"Credentials are still valid for {calculate_time_left(expiration)} until {expiration}.")
                 return
 
     # Generate new credentials
@@ -104,7 +104,9 @@ def get_credentials(
     """Retrieve temporary credentials from AWS STS."""
     if not token:
         token = prompter()(f"Enter MFA token for device {device}: ")
+        validate_token(token)
 
+    logger.info("Starting AWS MFA authentication...")
     client = boto3.client(
         "sts",
         aws_access_key_id=key_id,
@@ -112,6 +114,7 @@ def get_credentials(
         region_name=region,  # Use the region parameter here
     )
 
+    logger.info(f"Fetching temporary credentials for - Profile:  {short_term_name}, Duration: {duration} seconds {format_duration(duration)}")
     response = None
     try:
         if assume_role:
@@ -142,4 +145,4 @@ def get_credentials(
     with open(AWS_CREDS_PATH, "w") as configfile:
         config.write(configfile)
 
-    logger.info(f"Temporary credentials saved. Expire at: {credentials['Expiration']}.")
+    logger.info(f"Success! Temporary credentials saved and will expire in {duration} seconds ({format_duration(duration)}) at: {credentials['Expiration']}..")
