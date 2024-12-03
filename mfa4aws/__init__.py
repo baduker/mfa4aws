@@ -1,2 +1,2 @@
 __name__ = "mfa4aws"
-__version__ = "0.1.0beta"
+__version__ = "0.1.1beta"

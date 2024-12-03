@@ -1,27 +1,12 @@
 import logging
-import sys
-from datetime import datetime
 
 import click
 
-from mfa4aws import __version__
 from mfa4aws.config import initial_setup
 from mfa4aws.core import validate, get_config, AWS_CREDS_PATH, get_profiles
+from mfa4aws.version import show_version
 
 logger = logging.getLogger("mfa4aws")
-
-RELEASE_DATE = datetime.now().strftime("%Y-%m-%d")
-ASCII_LOGO = f"""
-Manage your AWS MFA credentials with ease.
-
-███    ███ ███████  █████  ██   ██  █████  ██     ██ ███████
-████  ████ ██      ██   ██ ██   ██ ██   ██ ██     ██ ██
-██ ████ ██ █████   ███████ ███████ ███████ ██  █  ██ ███████
-██  ██  ██ ██      ██   ██      ██ ██   ██ ██ ███ ██      ██
-██      ██ ██      ██   ██      ██ ██   ██  ███ ███  ███████
-                                     v{__version__} ({RELEASE_DATE})
-"""
-
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]}, invoke_without_command=True)
 @click.option("--version", is_flag=True, help="Show logo and version information, then exit.")
@@ -30,10 +15,7 @@ Manage your AWS MFA credentials with ease.
 def cli(ctx, version, log_level):
     """MFA4AWS: A CLI Tool for AWS MFA Authentication."""
     if version:
-        python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-        platform_info = sys.platform.capitalize()
-        click.echo(ASCII_LOGO)
-        click.echo(f"Running {__name__} on {platform_info} with Python {python_version}")
+        show_version()
         ctx.exit()
 
     if ctx.invoked_subcommand is None:
