@@ -1,10 +1,10 @@
 import logging
-import sys
 
 import click
 
 from mfa4aws.config import initial_setup
-from mfa4aws.core import validate, get_config, AWS_CREDS_PATH, get_profiles
+from mfa4aws.core import validate, get_config, AWS_CREDS_PATH, get_profiles, get_aws_config_and_credentials
+from mfa4aws.util import format_config_output
 from mfa4aws.version import show_version
 
 logger = logging.getLogger(__name__)
@@ -129,12 +129,10 @@ def list_profiles():
         click.echo("No profiles found in the credentials file.")
         return
 
-    click.echo(f"Available AWS profiles in {AWS_CREDS_PATH}:")
-    for index, profile in enumerate(profiles, start=1):
-        click.echo(f"{index}. {profile}")
-
-    for profile in get_profiles():
-        click.echo(profile)
+    for  profile in profiles:
+        config_data = get_aws_config_and_credentials(profile)
+        formatted_output = format_config_output(config_data)
+        click.echo(formatted_output)
 
 if __name__ == "__main__":
     cli()

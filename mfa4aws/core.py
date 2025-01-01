@@ -11,7 +11,65 @@ from mfa4aws.util import prompter, validate_token, format_duration, calculate_ti
 
 logger = logging.getLogger(__name__)
 
+
+AWS_CONFIG_PATH = Path.home() / ".aws" / "config"
 AWS_CREDS_PATH = Path.home() / ".aws" / "credentials"
+
+
+def get_aws_config_and_credentials(profile=None):
+    """Read AWS configuration and credentials and return as a dictionary."""
+    config = ConfigParser()
+    credentials = ConfigParser()
+
+    config.read(AWS_CONFIG_PATH)
+    credentials.read(AWS_CREDS_PATH)
+
+    profiles = {}
+
+    # Combine profiles from config and credentials files
+    config_profiles = config.sections()
+    credential_profiles = credentials.sections()
+    all_profiles = set(config_profiles) | set(credential_profiles)
+
+    # Optionally filter by profile
+    if profile:
+        if not profile.startswith('profile '):
+            profile_section = f'profile {profile}'
+        else:
+            profile_section = profile
+        all_profiles = [profile_section]
+
+    for prof in all_profiles:
+        # Remove 'profile ' prefix if present
+        prof_name = prof.replace('profile ', '')
+
+        profiles[prof_name] = {
+            'access_key': None,
+            'secret_key': None,
+            'region': None,
+            'source': {
+                'access_key': None,
+                'secret_key': None,
+                'region': None,
+            }
+        }
+
+        # Get access_key and secret_key from credentials file
+        if prof_name in credentials:
+            if credentials[prof_name].get('aws_access_key_id'):
+                profiles[prof_name]['access_key'] = credentials[prof_name]['aws_access_key_id']
+                profiles[prof_name]['source']['access_key'] = 'shared-credentials-file'
+            if credentials[prof_name].get('aws_secret_access_key'):
+                profiles[prof_name]['secret_key'] = credentials[prof_name]['aws_secret_access_key']
+                profiles[prof_name]['source']['secret_key'] = 'shared-credentials-file'
+
+        # Get region from config file
+        if prof in config:
+            if config[prof].get('region'):
+                profiles[prof_name]['region'] = config[prof]['region']
+                profiles[prof_name]['source']['region'] = 'config-file'
+
+    return profiles
 
 
 def get_config(aws_creds_path: Path) -> ConfigParser:
