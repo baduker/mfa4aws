@@ -1,7 +1,6 @@
 import logging
 
 import click
-
 from mfa4aws.config import initial_setup
 from mfa4aws.core import validate, get_config, AWS_CREDS_PATH, get_profiles, get_aws_config_and_credentials
 from mfa4aws.util import format_config_output
@@ -37,12 +36,19 @@ level_formats = {
     logging.CRITICAL: detailed_format,
 }
 
-@click.group(context_settings={"help_option_names": ["-h", "--help"]})
+@click.group(
+    invoke_without_command=True,
+    context_settings={"help_option_names": ["-h", "--help"]}
+)
 @click.option("--version", is_flag=True, help="Show logo and version information, then exit.")
 @click.option("--log-level", default="INFO", help="Set log level (DEBUG, INFO, WARNING, ERROR).")
 @click.pass_context
 def cli(ctx, version, log_level):
     """mfa4aws: A CLI Tool for AWS MFA Authentication."""
+
+    if version:
+        show_version()
+        ctx.exit()
 
     # Configure logging
     level = getattr(logging, log_level.upper(), logging.INFO)
@@ -56,10 +62,6 @@ def cli(ctx, version, log_level):
     root_logger.setLevel(level)
     root_logger.handlers = []  # Clear existing handlers
     root_logger.addHandler(handler)
-
-    if version:
-        show_version()
-        ctx.exit()
 
     if ctx.invoked_subcommand is None:
         click.echo("No command provided. Use --help for usage information.")

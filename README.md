@@ -9,5 +9,9 @@ with some additional features and improvements.
 ██  ██  ██ ██      ██   ██      ██ ██   ██ ██ ███ ██      ██
 ██      ██ ██      ██   ██      ██ ██   ██  ███ ███  ███████
 ```
-
 ---
+
+### NOTE!
+
+This is work in progress. While the basic functionality is there, 
+there are still some rough edges and bugs to be ironed out. Use at your own risk.
